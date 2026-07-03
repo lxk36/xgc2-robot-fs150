@@ -82,7 +82,9 @@ docker run --rm \
         > /etc/apt/sources.list.d/xgc2.list
 
       apt-get update
-      apt-get install -y --no-install-recommends /workspace/out/xgc2-fs150_*.deb
+      apt-get install -y --no-install-recommends \
+        /workspace/out/xgc2-fs150_*.deb \
+        /workspace/out/xgc2-fs150-mavlink-router_*.deb
       /workspace/fs150/.xgc2/scripts/check_installed_package.sh
     fi
   '

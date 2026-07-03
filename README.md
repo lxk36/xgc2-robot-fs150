@@ -23,21 +23,25 @@ platform and should follow the aircraft across deployments.
 - Package type: mixed Debian profile package
 - Published package:
   - `xgc2-fs150`
+  - `xgc2-fs150-mavlink-router`
 
-The package is a real-vehicle aggregation package.  It installs the FS150
+The `xgc2-fs150` package is a real-vehicle aggregation package.  It installs the FS150
 resources under `/opt/xgc2/robots/fs150` and depends on the ROS Noetic,
 MAVROS, VRPN, MAVLink router, and XGC2 Linux utility packages expected on the
 onboard computer.
+
+The `xgc2-fs150-mavlink-router` package is the opt-in flight-runtime router
+service.  It depends on the XGC2-published `xgc2-mavlink-router` binary
+package, installs `/etc/xgc2/fs150-mavlink-router/router.conf`, and enables
+`xgc2-fs150-mavlink-router.service` on install.
 
 `pymavlink` is useful for low-level MAVLink debugging, but it is not available
 as a standard Ubuntu Focal/ROS Noetic APT package in the checked repositories.
 Install it separately for debug sessions if needed.
 
 The `xgc2-fs150` package itself does not install, enable, or start FS150
-flight-runtime systemd services.  Services that can claim serial ports, change
-CPU governor behavior, or alter flight-runtime state should be added and
-enabled by an explicit deployment step.  Dependency packages may still keep
-their own standard Debian service behavior.
+flight-runtime systemd services.  Install `xgc2-fs150-mavlink-router` when the
+machine should claim `/dev/ttyS7` and run the MAVLink router at boot.
 
 ## Install
 
@@ -46,6 +50,7 @@ Configure both the ROS Noetic APT source and the XGC2 APT source first.  Then:
 ```bash
 sudo apt update
 sudo apt install xgc2-fs150
+sudo apt install xgc2-fs150-mavlink-router
 ```
 
 Smoke test:
@@ -54,6 +59,9 @@ Smoke test:
 test -d /opt/xgc2/robots/fs150/docs
 test -f /opt/xgc2/robots/fs150/docs/rk356x_performance_mode.md
 dpkg -s xgc2-fs150
+dpkg -s xgc2-fs150-mavlink-router
+systemctl is-enabled xgc2-fs150-mavlink-router.service
+test -f /etc/xgc2/fs150-mavlink-router/router.conf
 ```
 
 ## Source Layout
@@ -64,6 +72,18 @@ onboard/    Onboard-computer resources, service files, router config notes,
             CPU/performance tuning, startup commands.
 px4/        Real PX4 firmware/parameter export notes and airframe details.
 ```
+
+## MAVLink Router
+
+The FS150 service package installs this static router topology:
+
+- TCP server on `5760` for QGC active connections.
+- UART `/dev/ttyS7` at `921600` baud for the PX4 flight controller.
+- Remote MAVROS UDP server on `0.0.0.0:14560` with `BlockMsgIdOut = 105, 106, 331`.
+- Local MAVROS UDP server on `127.0.0.1:14561` without message filtering.
+
+The message block is applied only on the remote UDP endpoint output path, so
+local MAVROS can still receive high-rate IMU data from message `105`.
 
 ## Current Notes
 
@@ -79,6 +99,7 @@ This repository owns:
 - real PX4 parameter/firmware export notes;
 - real-vehicle port, sensor, and field-test records;
 - the `xgc2-fs150` real-vehicle aggregation Debian package.
+- the `xgc2-fs150-mavlink-router` service Debian package.
 
 This repository does not own:
 

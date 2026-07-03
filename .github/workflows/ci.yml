@@ -28,6 +28,9 @@ jobs:
           bash -n .xgc2/scripts/package_deb.sh
           bash -n .xgc2/scripts/build_deb_in_docker.sh
           bash -n .xgc2/scripts/check_installed_package.sh
+          bash -n .xgc2/debian/xgc2-fs150-mavlink-router/postinst
+          bash -n .xgc2/debian/xgc2-fs150-mavlink-router/prerm
+          bash -n .xgc2/debian/xgc2-fs150-mavlink-router/postrm
 
   build-debs:
     strategy:

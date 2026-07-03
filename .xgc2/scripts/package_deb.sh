@@ -5,8 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 OUTPUT_DIR=""
-PACKAGE="xgc2-fs150"
+PROFILE_PACKAGE="xgc2-fs150"
+ROUTER_PACKAGE="xgc2-fs150-mavlink-router"
 INSTALL_PREFIX="/opt/xgc2/robots/fs150"
+ROUTER_ETC_DIR="/etc/xgc2/fs150-mavlink-router"
 
 product_version() {
   awk -F': *' '/^version:[[:space:]]*/ {print $2; exit}' "${REPO_ROOT}/.xgc2/product.yml"
@@ -50,23 +52,25 @@ cleanup() {
 trap cleanup EXIT
 
 mkdir -p "${OUTPUT_DIR}"
-rm -f "${OUTPUT_DIR}/${PACKAGE}_"*.deb
+rm -f "${OUTPUT_DIR}/${PROFILE_PACKAGE}_"*.deb "${OUTPUT_DIR}/${ROUTER_PACKAGE}_"*.deb
 
-pkg_root="${BUILD_DIR}/${PACKAGE}"
-target_root="${pkg_root}${INSTALL_PREFIX}"
-mkdir -p \
-  "${pkg_root}/DEBIAN" \
-  "${pkg_root}/usr/share/doc/${PACKAGE}" \
-  "${target_root}"
+build_profile_package() {
+  local pkg_root="${BUILD_DIR}/${PROFILE_PACKAGE}"
+  local target_root="${pkg_root}${INSTALL_PREFIX}"
 
-for path in README.md docs onboard px4; do
-  if [[ -e "${REPO_ROOT}/${path}" ]]; then
-    cp -a "${REPO_ROOT}/${path}" "${target_root}/"
-  fi
-done
+  mkdir -p \
+    "${pkg_root}/DEBIAN" \
+    "${pkg_root}/usr/share/doc/${PROFILE_PACKAGE}" \
+    "${target_root}"
 
-cat > "${pkg_root}/DEBIAN/control" <<EOF
-Package: ${PACKAGE}
+  for path in README.md docs onboard px4; do
+    if [[ -e "${REPO_ROOT}/${path}" ]]; then
+      cp -a "${REPO_ROOT}/${path}" "${target_root}/"
+    fi
+  done
+
+  cat > "${pkg_root}/DEBIAN/control" <<EOF
+Package: ${PROFILE_PACKAGE}
 Version: ${VERSION}
 Section: metapackages
 Priority: optional
@@ -81,18 +85,90 @@ Description: XGC2 FS150 real-vehicle profile
  expected on the FS150 onboard computer.
 EOF
 
-cat > "${pkg_root}/usr/share/doc/${PACKAGE}/README" <<EOF
+  cat > "${pkg_root}/usr/share/doc/${PROFILE_PACKAGE}/README" <<EOF
 XGC2 FS150 Robot
 
 Installed resources:
   ${INSTALL_PREFIX}
 
 This package does not enable or start flight-runtime services automatically.
+Install ${ROUTER_PACKAGE} to enable the FS150 MAVLink router service.
 EOF
 
-find "${pkg_root}" -type d -exec chmod 0755 {} +
-find "${pkg_root}" -type f -exec chmod 0644 {} +
-chmod 0755 "${pkg_root}/DEBIAN"
+  find "${pkg_root}" -type d -exec chmod 0755 {} +
+  find "${pkg_root}" -type f -exec chmod 0644 {} +
+  chmod 0755 "${pkg_root}/DEBIAN"
 
-fakeroot dpkg-deb --build "${pkg_root}" "${OUTPUT_DIR}/${PACKAGE}_${VERSION}_all.deb" >/dev/null
-find "${OUTPUT_DIR}" -maxdepth 1 -type f -name "${PACKAGE}_*.deb" -print | sort
+  fakeroot dpkg-deb --build \
+    "${pkg_root}" \
+    "${OUTPUT_DIR}/${PROFILE_PACKAGE}_${VERSION}_all.deb" >/dev/null
+}
+
+build_router_package() {
+  local pkg_root="${BUILD_DIR}/${ROUTER_PACKAGE}"
+
+  mkdir -p \
+    "${pkg_root}/DEBIAN" \
+    "${pkg_root}/lib/systemd/system" \
+    "${pkg_root}/usr/share/doc/${ROUTER_PACKAGE}" \
+    "${pkg_root}${ROUTER_ETC_DIR}/config.d"
+
+  install -m 0644 \
+    "${REPO_ROOT}/onboard/mavlink-router/router.conf" \
+    "${pkg_root}${ROUTER_ETC_DIR}/router.conf"
+  install -m 0644 \
+    "${REPO_ROOT}/onboard/mavlink-router/xgc2-fs150-mavlink-router.service" \
+    "${pkg_root}/lib/systemd/system/${ROUTER_PACKAGE}.service"
+
+  for script in postinst prerm postrm; do
+    install -m 0755 \
+      "${REPO_ROOT}/.xgc2/debian/${ROUTER_PACKAGE}/${script}" \
+      "${pkg_root}/DEBIAN/${script}"
+  done
+
+  cat > "${pkg_root}/DEBIAN/control" <<EOF
+Package: ${ROUTER_PACKAGE}
+Version: ${VERSION}
+Section: misc
+Priority: optional
+Architecture: all
+Maintainer: XGC2 <apt@example.com>
+Depends: xgc2-mavlink-router, systemd
+Recommends: xgc2-fs150
+Description: XGC2 FS150 MAVLink router service
+ FS150-specific MAVLink router configuration and systemd service.
+ It uses /usr/bin/mavlink-routerd from xgc2-mavlink-router, listens on
+ TCP 5760, routes the fixed /dev/ttyS7 flight-controller UART at 921600 baud,
+ and exposes filtered remote MAVROS plus unfiltered local MAVROS UDP ports.
+EOF
+
+  cat > "${pkg_root}/usr/share/doc/${ROUTER_PACKAGE}/README" <<EOF
+XGC2 FS150 MAVLink Router
+
+Installed service:
+  ${ROUTER_PACKAGE}.service
+
+Installed configuration:
+  ${ROUTER_ETC_DIR}/router.conf
+  ${ROUTER_ETC_DIR}/config.d
+
+The service is enabled on install and stopped/disabled on package removal.
+It depends on xgc2-mavlink-router for /usr/bin/mavlink-routerd.
+EOF
+
+  find "${pkg_root}" -type d -exec chmod 0755 {} +
+  find "${pkg_root}" -type f -exec chmod 0644 {} +
+  chmod 0755 "${pkg_root}/DEBIAN" \
+    "${pkg_root}/DEBIAN/postinst" \
+    "${pkg_root}/DEBIAN/prerm" \
+    "${pkg_root}/DEBIAN/postrm"
+
+  fakeroot dpkg-deb --build \
+    "${pkg_root}" \
+    "${OUTPUT_DIR}/${ROUTER_PACKAGE}_${VERSION}_all.deb" >/dev/null
+}
+
+build_profile_package
+build_router_package
+
+find "${OUTPUT_DIR}" -maxdepth 1 -type f -name "*.deb" -print | sort

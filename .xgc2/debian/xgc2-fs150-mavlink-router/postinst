@@ -1,0 +1,27 @@
+#!/bin/sh
+set -e
+
+SERVICE="xgc2-fs150-mavlink-router.service"
+
+systemd_running() {
+  [ -d /run/systemd/system ]
+}
+
+if [ "$1" = "configure" ] && command -v systemctl >/dev/null 2>&1; then
+  systemctl daemon-reload >/dev/null 2>&1 || true
+
+  for old_service in startMavRoute.service fs150-mavlink-router.service mavlink-router.service; do
+    if systemd_running; then
+      systemctl stop "${old_service}" >/dev/null 2>&1 || true
+    fi
+    systemctl disable "${old_service}" >/dev/null 2>&1 || true
+  done
+
+  systemctl enable "${SERVICE}" >/dev/null 2>&1 || true
+
+  if systemd_running; then
+    systemctl restart "${SERVICE}" >/dev/null 2>&1 || true
+  fi
+fi
+
+exit 0
