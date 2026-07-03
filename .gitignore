@@ -1,0 +1,13 @@
+.DS_Store
+*.pyc
+__pycache__/
+
+# Local captures and logs should not be committed by default.
+*.bag
+*.ulg
+*.log
+*.pcap
+*.pcapng
+
+# Local operator notes may contain vehicle IPs, passwords, or test data.
+local/
