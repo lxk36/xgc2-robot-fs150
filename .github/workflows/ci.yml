@@ -1,0 +1,56 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  compliance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Run metadata and shell checks
+        run: |
+          set -euo pipefail
+          git diff --check HEAD
+          bash -n .xgc2/scripts/package_deb.sh
+          bash -n .xgc2/scripts/build_deb_in_docker.sh
+          bash -n .xgc2/scripts/check_installed_package.sh
+
+  build-debs:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and install-check deb package
+        run: |
+          set -euo pipefail
+          .xgc2/scripts/build_deb_in_docker.sh \
+            --work-dir "$RUNNER_TEMP/xgc2-fs150-${{ matrix.arch }}" \
+            --output-dir "$GITHUB_WORKSPACE/debs"
+
+      - name: Upload deb artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: xgc2-fs150-debs-${{ matrix.arch }}
+          path: debs/*.deb

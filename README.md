@@ -15,6 +15,47 @@ products/ros1/simulator/gazebo-sim/fs150-sitl
 The repository is intended for resources that are tied to the physical FS150
 platform and should follow the aircraft across deployments.
 
+## Package
+
+- Product id: `xgc2-fs150`
+- Source path: `products/robotics/fs150`
+- Release branch: `main`
+- Package type: mixed Debian profile package
+- Published package:
+  - `xgc2-fs150`
+
+The package is a real-vehicle aggregation package.  It installs the FS150
+resources under `/opt/xgc2/robots/fs150` and depends on the ROS Noetic,
+MAVROS, VRPN, MAVLink router, and XGC2 Linux utility packages expected on the
+onboard computer.
+
+`pymavlink` is useful for low-level MAVLink debugging, but it is not available
+as a standard Ubuntu Focal/ROS Noetic APT package in the checked repositories.
+Install it separately for debug sessions if needed.
+
+The `xgc2-fs150` package itself does not install, enable, or start FS150
+flight-runtime systemd services.  Services that can claim serial ports, change
+CPU governor behavior, or alter flight-runtime state should be added and
+enabled by an explicit deployment step.  Dependency packages may still keep
+their own standard Debian service behavior.
+
+## Install
+
+Configure both the ROS Noetic APT source and the XGC2 APT source first.  Then:
+
+```bash
+sudo apt update
+sudo apt install xgc2-fs150
+```
+
+Smoke test:
+
+```bash
+test -d /opt/xgc2/robots/fs150/docs
+test -f /opt/xgc2/robots/fs150/docs/rk356x_performance_mode.md
+dpkg -s xgc2-fs150
+```
+
 ## Source Layout
 
 ```text
@@ -36,7 +77,8 @@ This repository owns:
 
 - real FS150 onboard-computer runtime notes and configuration references;
 - real PX4 parameter/firmware export notes;
-- real-vehicle port, sensor, and field-test records.
+- real-vehicle port, sensor, and field-test records;
+- the `xgc2-fs150` real-vehicle aggregation Debian package.
 
 This repository does not own:
 

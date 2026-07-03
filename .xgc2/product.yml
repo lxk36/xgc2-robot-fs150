@@ -1,0 +1,42 @@
+schema: xgc2.product.v1
+id: xgc2-fs150
+name: XGC2 FS150 Robot
+version: 0.1.0-1
+kind: mixed
+summary: Real FS150 robot onboard profile, documentation, and runtime dependency aggregation.
+groups:
+- robotics
+- fs150
+apt:
+  distribution: focal
+  install:
+  - xgc2-fs150
+  packages:
+  - xgc2-fs150
+  depends:
+  - chrony
+  - python3
+  - ros-noetic-ros-base
+  - ros-noetic-mavros
+  - ros-noetic-mavros-extras
+  - ros-noetic-vrpn-client-ros
+  - ros-noetic-xgc2-linux-utils
+  - xgc2-mavlink-router
+usage:
+  install: 'sudo apt update
+
+    sudo apt install xgc2-fs150
+
+    '
+  smoke_test: 'test -d /opt/xgc2/robots/fs150/docs
+
+    test -f /opt/xgc2/robots/fs150/docs/rk356x_performance_mode.md
+
+    dpkg -s xgc2-fs150
+
+    '
+  notes: The ROS Noetic and XGC2 APT sources must be configured before installing this package.
+ownership:
+  paths:
+  - /opt/xgc2/robots/fs150
+  - /usr/share/doc/xgc2-fs150
