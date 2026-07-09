@@ -90,6 +90,9 @@ local MAVROS can still receive high-rate IMU data from message `105`.
 - RK356x/RK3566 onboard-computer CPU governor modes and performance-mode
   commands are documented in
   [docs/rk356x_performance_mode.md](docs/rk356x_performance_mode.md).
+- Flight-controller UART routing and MAVROS/PX4 `TIMESYNC` RTT warning behavior
+  are documented in
+  [docs/mavlink_timesync_rtt.md](docs/mavlink_timesync_rtt.md).
 
 ## Repository Boundary
 
