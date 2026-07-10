@@ -44,6 +44,7 @@ docker run --rm \
   "${docker_run_args[@]}" \
   -e DEBIAN_FRONTEND=noninteractive \
   -e INSTALL_CHECK="${INSTALL_CHECK}" \
+  -e XGC2_APT_OVERLAY_URL="${XGC2_APT_OVERLAY_URL:-}" \
   -v "${REPO_ROOT}:/workspace/fs150:ro" \
   -v "${WORK_DIR}:/workspace/work" \
   -v "${OUTPUT_DIR}:/workspace/out" \
@@ -78,6 +79,10 @@ docker run --rm \
 
       curl -fsSL https://xgc2.apt.xiaokang.ink/xgc2-archive-keyring.gpg \
         -o /etc/apt/keyrings/xgc2-archive-keyring.gpg
+      if [[ -n "${XGC2_APT_OVERLAY_URL:-}" ]]; then
+        echo "deb [signed-by=/etc/apt/keyrings/xgc2-archive-keyring.gpg] ${XGC2_APT_OVERLAY_URL%/} focal main" \
+          > /etc/apt/sources.list.d/00-xgc2-release-train.list
+      fi
       echo "deb [signed-by=/etc/apt/keyrings/xgc2-archive-keyring.gpg] https://xgc2.apt.xiaokang.ink focal main" \
         > /etc/apt/sources.list.d/xgc2.list
 

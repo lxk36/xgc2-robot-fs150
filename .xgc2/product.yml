@@ -1,7 +1,7 @@
 schema: xgc2.product.v1
 id: xgc2-fs150
 name: XGC2 FS150 Robot
-version: 0.1.0-3
+version: 0.1.0-4
 kind: mixed
 summary: Real FS150 robot onboard profile, documentation, and runtime dependency aggregation.
 groups:
@@ -23,7 +23,7 @@ apt:
   - ros-noetic-mavros-extras
   - ros-noetic-vrpn-client-ros
   - ros-noetic-xgc2-linux-utils
-  - xgc2-mavlink-router
+  - xgc2-mavlink-router (>= 3.0.0-7+focal)
 usage:
   install: 'sudo apt update
 
@@ -45,7 +45,8 @@ usage:
     systemctl is-enabled xgc2-fs150-mavlink-router.service
 
     '
-  notes: The ROS Noetic and XGC2 APT sources must be configured before installing this package.
+  notes: The ROS Noetic and XGC2 APT sources must be configured before installing
+    this package.
 ownership:
   paths:
   - /opt/xgc2/robots/fs150
