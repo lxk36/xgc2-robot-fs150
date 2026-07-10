@@ -33,15 +33,7 @@ jobs:
           bash -n .xgc2/debian/xgc2-fs150-mavlink-router/postrm
 
   build-debs:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: amd64
-            runner: ubuntu-latest
-          - arch: arm64
-            runner: ubuntu-24.04-arm
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -49,27 +41,29 @@ jobs:
         run: |
           set -euo pipefail
           .xgc2/scripts/build_deb_in_docker.sh \
-            --work-dir "$RUNNER_TEMP/xgc2-fs150-${{ matrix.arch }}" \
+            --work-dir "$RUNNER_TEMP/xgc2-fs150-all" \
             --output-dir "$GITHUB_WORKSPACE/debs"
 
       - name: Create trusted build manifest
         run: |
-          python3 .xgc2/scripts/xgc2_artifact_manifest.py build \
-            --deb-dir debs \
-            --output-dir .ci/build-manifests \
-            --product xgc2-fs150 \
-            --product-version "$(awk -F': *' '/^version:/ {print $2; exit}' .xgc2/product.yml)" \
-            --distribution focal \
-            --architecture "${{ matrix.arch }}" \
-            --source-sha "$GITHUB_SHA" \
-            --ci-run-id "$GITHUB_RUN_ID" \
-            --ci-workflow "$GITHUB_WORKFLOW" \
-            --ci-workflow-ref "$GITHUB_WORKFLOW_REF"
+          for architecture in amd64 arm64; do
+            python3 .xgc2/scripts/xgc2_artifact_manifest.py build \
+              --deb-dir debs \
+              --output-dir .ci/build-manifests \
+              --product xgc2-fs150 \
+              --product-version "$(awk -F': *' '/^version:/ {print $2; exit}' .xgc2/product.yml)" \
+              --distribution focal \
+              --architecture "$architecture" \
+              --source-sha "$GITHUB_SHA" \
+              --ci-run-id "$GITHUB_RUN_ID" \
+              --ci-workflow "$GITHUB_WORKFLOW" \
+              --ci-workflow-ref "$GITHUB_WORKFLOW_REF"
+          done
 
       - name: Upload deb artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: xgc2-fs150-debs-${{ matrix.arch }}
+          name: xgc2-fs150-debs-all
           path: |
             debs/*.deb
             .ci/build-manifests/*.json

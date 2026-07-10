@@ -118,17 +118,9 @@ jobs:
         run: echo "No standalone source tests are configured for xgc2-robot-fs150."
 
   build:
-    name: debs-${{ matrix.arch }}
+    name: debs-all
     needs: release-guard
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: amd64
-            runner: ubuntu-latest
-          - arch: arm64
-            runner: ubuntu-24.04-arm
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -136,28 +128,30 @@ jobs:
         run: |
           set -euo pipefail
           .xgc2/scripts/build_deb_in_docker.sh \
-            --work-dir "$RUNNER_TEMP/xgc2-fs150-release-${{ matrix.arch }}" \
+            --work-dir "$RUNNER_TEMP/xgc2-fs150-release-all" \
             --output-dir "$GITHUB_WORKSPACE/debs"
 
       - name: Create release-train build manifest
         run: |
-          python3 .xgc2/scripts/xgc2_artifact_manifest.py build \
-            --deb-dir debs \
-            --output-dir .ci/build-manifests \
-            --product xgc2-fs150 \
-            --product-version "${{ inputs.expected_version }}" \
-            --distribution focal \
-            --architecture "${{ matrix.arch }}" \
-            --source-sha "${{ inputs.expected_source_sha }}" \
-            --ci-run-id "$GITHUB_RUN_ID" \
-            --ci-workflow "$GITHUB_WORKFLOW" \
-            --ci-workflow-ref "$GITHUB_WORKFLOW_REF"
+          for architecture in amd64 arm64; do
+            python3 .xgc2/scripts/xgc2_artifact_manifest.py build \
+              --deb-dir debs \
+              --output-dir .ci/build-manifests \
+              --product xgc2-fs150 \
+              --product-version "${{ inputs.expected_version }}" \
+              --distribution focal \
+              --architecture "$architecture" \
+              --source-sha "${{ inputs.expected_source_sha }}" \
+              --ci-run-id "$GITHUB_RUN_ID" \
+              --ci-workflow "$GITHUB_WORKFLOW" \
+              --ci-workflow-ref "$GITHUB_WORKFLOW_REF"
+          done
 
       - name: Upload deb artifacts
         if: ${{ inputs.prepare_action == 'release' }}
         uses: actions/upload-artifact@v4
         with:
-          name: xgc2-fs150-debs-${{ matrix.arch }}
+          name: xgc2-fs150-debs-all
           path: |
             debs/*.deb
             .ci/build-manifests/*.json

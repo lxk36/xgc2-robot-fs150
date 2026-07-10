@@ -76,7 +76,7 @@ Section: metapackages
 Priority: optional
 Architecture: all
 Maintainer: XGC2 <apt@example.com>
-Depends: chrony, python3, ros-noetic-ros-base, ros-noetic-mavros, ros-noetic-mavros-extras, ros-noetic-vrpn-client-ros, ros-noetic-xgc2-linux-utils, xgc2-mavlink-router
+Depends: chrony, python3, ros-noetic-ros-base, ros-noetic-mavros, ros-noetic-mavros-extras, ros-noetic-vrpn-client-ros, xgc2-utils-linux-performance-mode (>= 1.1.0-12), xgc2-mavlink-router (>= 3.0.0-7+focal)
 Recommends: htop, i2c-tools, iproute2, net-tools, python3-pip, socat, tmux, usbutils
 Description: XGC2 FS150 real-vehicle profile
  Real FS150 robot/onboard aggregation package for XGC2.
@@ -133,7 +133,7 @@ Section: misc
 Priority: optional
 Architecture: all
 Maintainer: XGC2 <apt@example.com>
-Depends: xgc2-mavlink-router, systemd
+Depends: xgc2-mavlink-router (>= 3.0.0-7+focal), systemd
 Recommends: xgc2-fs150
 Description: XGC2 FS150 MAVLink router service
  FS150-specific MAVLink router configuration and systemd service.
