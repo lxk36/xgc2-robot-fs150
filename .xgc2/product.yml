@@ -54,3 +54,7 @@ ownership:
   - /etc/xgc2/fs150-mavlink-router
   - /lib/systemd/system/xgc2-fs150-mavlink-router.service
   - /usr/share/doc/xgc2-fs150-mavlink-router
+release:
+  dependency_policy:
+    xgc2-linux-utils: verify
+    xgc2-mavlink-router: verify
